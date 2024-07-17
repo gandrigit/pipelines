@@ -1,4 +1,4 @@
-library(gridExtra)
+#library(gridExtra)
 library(parallel)
 library(grid)
 library(circlize)
@@ -6,13 +6,14 @@ library(ComplexHeatmap)
 library(RColorBrewer)
 library(ggplot2)
 library(colorspace)
+library(cowplot)
 
 DCOLORPAL <- "RdBu"
 #DCOLORPAL <- "Tropic"
 SCOLORPAL <- "Plasma"
 
-source("~/Scripts/work/tools/map2color.r")
-source("~/Scripts/work/tools/iwanthue.r")
+#source("~/Scripts/work/tools/map2color.r")
+#source("~/Scripts/work/tools/iwanthue.r")
 
 
 
@@ -395,7 +396,7 @@ geneSet_heatmap <- function(gsMat, outFile, colClust = FALSE){
   gsMat.signif[abs(gsMat) > -log10(0.05)] <- "*"
   gsMat.signif[gsMat.signif != "*"] <- ""
   
-  h1 <- Heatmap(gsMat, name = "enrichment", col = col_fun, na_col = "black",
+  h1 <- ComplexHeatmap::Heatmap(gsMat, name = "enrichment", col = col_fun, na_col = "black",
                 cell_fun = function(j, i, x, y, width, height, fill) {
                   grid.text(sprintf("%s", gsMat.signif[i, j]), x, y, gp = gpar(fontsize = 14))},
                 cluster_columns = colClust, cluster_rows = rowClust, 
@@ -573,7 +574,7 @@ overallBarplot <- function(fhFiles, nb, outFile, termIdx = 1, nbIdx = 11, pvIdx 
   
   p <- ggplot(data=ggmat.up, aes(x=Term, y=Score, fill = NB))
   p <- p +  geom_bar(stat="identity", color = "black")
-  p <- p + geom_hline(yintercept=-log10(0.05), linetype="dashed", color = "grey20", size = 1.25)
+  p <- p + geom_hline(yintercept=-log10(0.05), linetype="dashed", color = "grey20", linewidth = 1.25)
   p <- p + coord_flip()
   p <- p + scale_y_continuous(limits = c(0, scoreMax), breaks = mybreaks)
   p <- p + scale_fill_continuous_sequential(palette = "Reds")
@@ -612,7 +613,7 @@ overallBarplot <- function(fhFiles, nb, outFile, termIdx = 1, nbIdx = 11, pvIdx 
   
   p <- ggplot(data=ggmat.down, aes(x=Term, y=Score, fill = NB))
   p <- p +  geom_bar(stat="identity", color = "black")
-  p <- p + geom_hline(yintercept=-log10(0.05), linetype="dashed", color = "grey20", size = 1.25)
+  p <- p + geom_hline(yintercept=-log10(0.05), linetype="dashed", color = "grey20", linewidth = 1.25)
   p <- p + coord_flip()
   p <- p + scale_y_continuous(limits = c(0, scoreMax), breaks = mybreaks)
   p <- p + scale_fill_continuous_sequential(palette = "Blues")
@@ -629,7 +630,8 @@ overallBarplot <- function(fhFiles, nb, outFile, termIdx = 1, nbIdx = 11, pvIdx 
   p.down <- p
   #ggsave(plot = p, filename = paste0(outName, "_top", nb, "DOWN_overall_barplot.pdf"), width = 8, height = 10)
   
-  p <- arrangeGrob(p.up, p.down, ncol = 2) #generates g
+  #p <- arrangeGrob(p.up, p.down, ncol = 2) #generates g
+  p <- plot_grid(p.up, p.down, labels = NULL)
   myheight <- 3
   if(nb > 10) myheight <- 2 + (nb*0.15)
   #ggsave(plot = p, filename = paste0(outName, "_top", nb, "_overall_barplot.pdf"), width = 8*2, height = myheight)
@@ -637,5 +639,21 @@ overallBarplot <- function(fhFiles, nb, outFile, termIdx = 1, nbIdx = 11, pvIdx 
   
 }
 
+getNESmat <- function(fhList, termIdx = 1, nesIdx = 4){
+  
+  geneSets <- sort(unique(unlist(lapply(fhList, function(x) return(as.character(x[, termIdx]))))))
+  
+  nesMat <- matrix(0, nrow = length(geneSets), ncol = length(fhList))
+  
+  for(yi in 1:ncol(nesMat)){
+    fh.current <- fhList[[yi]]
+    nesMat[, yi] <- fh.current[match(geneSets, as.character(fh.current[, termIdx])), nesIdx]
+  }
+  nesMat[is.na(nesMat)] <- 0
+  rownames(nesMat) <- geneSets
+  colnames(nesMat) <- names(fhList)
+  
+  return(data.frame(nesMat))
+}
 
 

@@ -27,12 +27,12 @@ DCOLORPAL <- "RdBu"
 SCOLORPAL <- "Plasma"
 
 
-source("~/Scripts/work/tools/fgsea_fct.r")
+#source("~/Scripts/work/tools/fgsea_fct.r")
 #source("~/Scripts/work/tools/hyperG.R")
-source("~/Scripts/work/tools/tools.r")
+#source("~/Scripts/work/tools/tools.r")
 #source("~/Scripts/work/tools/jaccardGraph.R")
-source("~/Scripts/work/tools/map2color.r")
-source("~/Scripts/work/tools/iwanthue.r")
+#source("~/Scripts/work/tools/map2color.r")
+#source("~/Scripts/work/tools/iwanthue.r")
 source("~/Scripts/work/pipelines/enrichment_plot_helper_fct.R")
 
 
@@ -126,7 +126,19 @@ mygsInfo <- function(object, geneSetID) {
 
 gseaScores <- getFromNamespace("gseaScores", "DOSE")
 
-
+getRankedGenes <- function(degMat)
+{
+  degMat <- degMat[as.character(degMat$entrez) != "NA", ]
+  degMat <- degMat[!duplicated(degMat$entrez), ]
+  entrez <- as.character(degMat$entrez) 
+  pv <- toNum(degMat$pv)
+  fc <- toNum(degMat$fc)
+  
+  score <- -log10(pv) * fc
+  names(score) <- entrez
+  
+  return(sort(score, decreasing = TRUE))
+}
 
 ############################################
 ###                                      ###
@@ -175,8 +187,7 @@ names(limmaFiles) <- gsub("_limma.xlsx", "", basename(limmaFiles))
 
 limmaList <- lapply(limmaFiles, read.xlsx, sheet = 1)
 
-rankedGenesList <- lapply(limmaList, getRankedGenesLimma)
-rankedGenesList <- lapply(rankedGenesList, sort, decreasing = TRUE)
+rankedGenesList <- lapply(limmaList, getRankedGenes)
 
 if(FALSE){
   ##################################
