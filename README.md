@@ -1,2 +1,2 @@
 # pipelines
-Pipelines for single- and multi-omits data analyses
+Pipelines for single- and multi-omics data analyses
